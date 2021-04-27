@@ -10,12 +10,12 @@ ref=( `ls ref_results` ) # All ref files
 tst=( `ls tests` ) # All test files
 
 for ((i = 0 ; i < ${#tst[*]} ; i++)); do # Go over each tst file
-	printf 'Check "$s"' "${tst[i]}"
-	./bp.exe ${tst[i]} > tmp # TODO: make sure it works (couldn't test it)
-	if cmp -s "${ref[i]}" "$tmp"; then #compare the outputs
-		printf ' - Pass \n'
+	#printf 'Check "$s"' "${tst[i]}"
+	./cmake-build-debug/CA-hw1.exe  tests/${tst[i]} > tmp # TODO: Change to your true exe
+	if cmp -s "ref_results/${ref[i]}" "$tmp"; then #compare the outputs
+		echo "Test ${tst[i]} - Pass"
 	else
-		printf ' - Fail \n'
+		echo "Test ${tst[i]} - Fail"
 	fi
 	#echo ${tst[i]} and ${ref[i]}
 done
