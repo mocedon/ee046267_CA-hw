@@ -20,7 +20,7 @@ int bitExtracted(int number, int k, int p)
 class row{
 public:
     row():valid_(0),tag_(0),target_(0),history_(0){}; //C'tor
-        //  לשים לב להערה שכתבתי בטאבלט
+    //  לשים לב להערה שכתבתי בטאבלט
     int valid_; // 0 = this instruction wasn't mapped to the BTB, 1=it was
     int tag_;
     int target_;
@@ -50,31 +50,31 @@ public:
     /*Methods*/
     /*Constructor - filling the btb fields and creating the table*/
     BTB(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState,
-    bool isGlobalHist, bool isGlobalTable, int Shared):btbSize_(btbSize), historySize_(historySize),
-    tagSize_(tagSize),fsmState_(fsmState), isGlobalHist_(isGlobalHist), isGlobalTable_(isGlobalTable),
-    Shared_(Shared)
+        bool isGlobalHist, bool isGlobalTable, int Shared):btbSize_(btbSize), historySize_(historySize),
+                                                           tagSize_(tagSize),fsmState_(fsmState), isGlobalHist_(isGlobalHist), isGlobalTable_(isGlobalTable),
+                                                           Shared_(Shared)
     {
         flushes_ = 0;
         branches_ = 0;
 
         /*deciding one of 4 combinations of local/global history and FSM*/
         /* locality = 0 --> local history, local FSM */
-        if((!isGlobalHist) & (!isGlobalTable))
+        if((!isGlobalHist_) && (!isGlobalTable_))
             locality_ = 0;
-        /* locality = 1 --> local history, global FSM */
-        else if((!isGlobalHist) & (isGlobalTable))
+            /* locality = 1 --> local history, global FSM */
+        else if((!isGlobalHist_) && (isGlobalTable_))
             locality_ = 1;
-        /* locality = 2 --> global history, global FSM */
-        else if((isGlobalHist) & (isGlobalTable))
+            /* locality = 2 --> global history, global FSM */
+        else if((isGlobalHist_) && (isGlobalTable_))
             locality_ = 2;
-        /* locality = 3 --> global history, local FSM */
+            /* locality = 3 --> global history, local FSM */
         else
             locality_ = 3;
 
 
         /*creating the BTB itself by vector of rows*/
         for (int i=0; i<btbSize_; i++)
-           rows.push_back(row());
+            rows.push_back(row());
 
 
         /*initializing the FSM in a case it is global*/
@@ -82,11 +82,11 @@ public:
             for (int i = 0; i < pow(2, historySize_); i++)
                 globalFsm.push_back(fsmState_);
 
-        /*PAY ATTENTION : We don't need to initialize the FSM in a case it is local
-        since we will do it in update function BUT because there is a problom from
-         avoid doing this after that in predict and update function we finally do this*/
+            /*PAY ATTENTION : We don't need to initialize the FSM in a case it is local
+            since we will do it in update function BUT because there is a problem from
+             avoid doing this after that in predict and update function we finally do this*/
 
-        /*initializing the FSM in a case it is local*/
+            /*initializing the FSM in a case it is local*/
         else
         {
             for (int i=0; i<btbSize_; i++)
@@ -98,7 +98,7 @@ public:
                 }
             }
         }
-    }//Ctor
+    }//C'tor
 
     /*extractFsmState*/
     int* extractFsmState(uint32_t pc)
@@ -106,31 +106,34 @@ public:
         /*extracting the bits used for mapping the row in the BTB*/
         int mappedRow = bitExtracted((int)pc, (int)log2(btbSize_), 3);
         int* state = nullptr;
+        // if(btb->rows[mappedRow].valid_==0)
+        //    return state;
         /*extracting the current fsm state*/
         if(locality_ == 0)
-                state = &(*btb).fsm[mappedRow][(*btb).rows[mappedRow].history_];
+            state = &btb->fsm[mappedRow][btb->rows[mappedRow].history_];
         else if(locality_ == 3)
-            state = &(*btb).fsm[mappedRow][globalHistory];
+            state = &btb->fsm[mappedRow][globalHistory];
         else // fsm is global
         {
-            int histBits = 0;
-            int pcBits = 0;
+            int histBits;
+            int pcBits;
             //extracting pc bits according to kind of share
             switch (Shared_)
             {
+                case 0:
+                    pcBits = 0;
+                    break;
                 case 1: //lsb share
                     pcBits = bitExtracted((int)pc, (int)historySize_, 3);
                     break;
                 case 2: //msb share
                     pcBits = bitExtracted((int)pc, (int)historySize_,17);
                     break;
-                default:
-                    pcBits = 0;
             }
             //extracting relevant history bits
             if(locality_ == 1)
-                histBits = (*btb).rows[mappedRow].history_;
-            else // locality_ = 2 
+                histBits = btb->rows[mappedRow].history_;
+            else // locality_ = 2
                 histBits = globalHistory;
             state = &globalFsm[pcBits ^ histBits];
         }
@@ -143,36 +146,51 @@ public:
      */
     void fsmUpdate(bool taken, int* state)
     {
-        if((*state == 0 & taken == 0) || (*state == 3 & taken == 1))
+        // if(state == nullptr)
+        //     return;
+        if((*state == 0 && taken == 0) || (*state == 3 && taken == 1))
             return;
         else
-            (taken)? (*state)++ : (*state)--;
+        {
+            if(taken == 1)
+                (*state)++;
+            else
+                (*state)--;
+        }
     }//fsmUpdate
 
 
     /*historyUpdate
      *
      **/
-    void historyUpdate(bool taken, uint32_t pc)
-    {
-        int mappedRow = bitExtracted((int)pc, (int)log2(btbSize_), 3);
+    void historyUpdate(bool taken, uint32_t pc) {
+        int mappedRow = bitExtracted((int) pc, (int) log2(btbSize_), 3);
         //help bits arr all equal to 1 and its length is history length
         int help = (1 << historySize_) - 1;
-        if(locality_ >= 2) //global history
-            globalHistory = ((globalHistory<<1) + (int)taken) & help;
-        else
-            (*btb).rows[mappedRow].history_=((*btb).rows[mappedRow].history_<<1 +(int)taken) & help;
+        if (locality_ >= 2) //global history
+        {
+            if(taken)
+                globalHistory = ((globalHistory << 1) + 1) & help;
+            else
+                globalHistory = (globalHistory << 1)  & help;
+        }
+        else {
+            if (taken)
+                (*btb).rows[mappedRow].history_ = ((btb->rows[mappedRow].history_ << 1) + 1) & help;
+            else
+                (*btb).rows[mappedRow].history_ = (btb->rows[mappedRow].history_ << 1) & help;
+        }
     } //historyUpdate
 };
 
 
 int BP_init(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState,
-        bool isGlobalHist, bool isGlobalTable, int Shared)
+            bool isGlobalHist, bool isGlobalTable, int Shared)
 {
     btb = new(nothrow) BTB(btbSize,historySize,tagSize,fsmState,isGlobalHist,
-                                                        isGlobalTable,Shared);
+                           isGlobalTable,Shared);
     if(btb == nullptr)
-       return -1;
+        return -1;
     return 0;
 }//BP_init
 
@@ -183,16 +201,16 @@ bool BP_predict(uint32_t pc, uint32_t *dst)
     int* state = btb->extractFsmState(pc);
     int mappedRow = bitExtracted((int)pc, (int)log2(btb->btbSize_), 3);
     //the given branch is in the table and it's predicted to be taken
-    if((btb->rows[mappedRow].valid_)&(btb->rows[mappedRow].tag_ == inputTag)&(*state > 1))
+    if((btb->rows[mappedRow].valid_)&&(btb->rows[mappedRow].tag_ == inputTag)&&(*state > 1))
     {
-        *dst = (uint32_t )btb->rows[mappedRow].target_;
+        *dst = btb->rows[mappedRow].target_;
         return true;
     }
-    /* other 3 options : 1. current branch is in the table but not taken
-    *                    2. there is a branch in the mapped row but its not the same
-    *                       branch(different tag)
-    *                    3. the mapped row is empty (valid=0);
-    */
+        /* other 3 options : 1. current branch is in the table but not taken
+        *                    2. there is a branch in the mapped row but its not the same
+        *                       branch(different tag)
+        *                    3. the mapped row is empty (valid=0);
+        */
     else
     {
         *dst = pc + 4;
@@ -212,8 +230,10 @@ void BP_update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst)
      *                 distinguish between different branches
      */
     int* state = btb->extractFsmState(pc); //predicted resolution
-    int predicted = (*state>1)? 1:0;
-    if((predicted || taken)&(targetPc != pred_dst))
+    //int predicted = (*state>1)? 1:0;
+    //if((predicted || taken)&&(targetPc != pred_dst))
+    bool my_predict = (targetPc == pred_dst);
+    if (my_predict != taken)
         btb->flushes_++;
 
     /* the update itself */
@@ -229,7 +249,7 @@ void BP_update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst)
 
         if(!btb->isGlobalHist_)//local history
             btb->rows[mappedRow].history_ = 0;
-        if(!btb->isGlobalHist_)//local history
+        if(!btb->isGlobalTable_)//local FSM
             for (int j = 0; j < pow(2, btb->historySize_); j++)
                 btb->fsm[mappedRow].push_back(btb->fsmState_);
 
@@ -238,9 +258,8 @@ void BP_update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst)
     }
 
     /* now we make the updates that relevant to any case*/
-    btb->historyUpdate(taken,pc);
     btb->fsmUpdate(taken,btb->extractFsmState(pc));
-    return;
+    btb->historyUpdate(taken,pc);
 }//BP_update
 
 
@@ -252,16 +271,20 @@ void BP_GetStats(SIM_stats *curStats)
     switch (btb->locality_)
     {
         case 0:
-            curStats->size = btb->btbSize_ * ((int)btb->tagSize_ + 30 + (int)btb->historySize_+ (int)pow(2, btb->historySize_ + 1));
+            curStats->size = btb->btbSize_ * ((int)btb->tagSize_ + 30  + (int)btb->historySize_ + (int)pow(2, btb->historySize_ + 1));
+            break;
         case 1:
             curStats->size = btb->btbSize_ * ((int) btb->tagSize_ + 30 + (int) btb->historySize_)
                              + (int) pow(2, btb->historySize_ + 1);
+            break;
         case 2:
             curStats->size = btb->btbSize_ * ( btb->tagSize_ + 30) + (int) btb->historySize_
                              + (int) pow(2, btb->historySize_ + 1);
+            break;
         case 3:
             curStats->size = btb->historySize_ + btb->btbSize_ *
-                             (btb->tagSize_ + 30 +pow(2, btb->historySize_ + 1));
+                                                 (btb->tagSize_ + 30 +(int)pow(2, btb->historySize_ + 1));
+            break;
     }//switch
     delete(btb); //frees the dynamic memory allocated in the Ctor
     return;
