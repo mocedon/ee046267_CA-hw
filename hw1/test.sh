@@ -11,7 +11,9 @@ tst=( `ls tests` ) # All test files
 
 for ((i = 0 ; i < ${#tst[*]} ; i++)); do # Go over each tst file
 	#printf 'Check "$s"' "${tst[i]}"
-	./cmake-build-debug/CA-hw1.exe  tst/${tst[i]} > tmp # TODO: Change to your true exe
+
+	$1 tst/${tst[i]} > tmp # TODO: Change to your true exe
+
 	if cmp -s "ref_results/${ref[i]}" "$tmp"; then #compare the outputs
 		echo "Test ${tst[i]} - Pass"
 	else
