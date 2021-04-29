@@ -9,7 +9,8 @@ using namespace std;
 //defining global variables in a case of global FSM/history
 int globalHistory = 0;
 vector <int> globalFsm;
-
+//int iterationTime=0;
+//int ariel_flushes=0;
 //the following method's aim is to extract k bits from specific position p in a given number
 int bitExtracted(int number, int k, int p)
 {
@@ -20,7 +21,7 @@ int bitExtracted(int number, int k, int p)
 class row{
 public:
     row():valid_(0),tag_(0),target_(0),history_(0){}; //C'tor
-    //  לשים לב להערה שכתבתי בטאבלט
+        //  לשים לב להערה שכתבתי בטאבלט
     int valid_; // 0 = this instruction wasn't mapped to the BTB, 1=it was
     int tag_;
     int target_;
@@ -50,9 +51,9 @@ public:
     /*Methods*/
     /*Constructor - filling the btb fields and creating the table*/
     BTB(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState,
-        bool isGlobalHist, bool isGlobalTable, int Shared):btbSize_(btbSize), historySize_(historySize),
-                                                           tagSize_(tagSize),fsmState_(fsmState), isGlobalHist_(isGlobalHist), isGlobalTable_(isGlobalTable),
-                                                           Shared_(Shared)
+    bool isGlobalHist, bool isGlobalTable, int Shared):btbSize_(btbSize), historySize_(historySize),
+    tagSize_(tagSize),fsmState_(fsmState), isGlobalHist_(isGlobalHist), isGlobalTable_(isGlobalTable),
+    Shared_(Shared)
     {
         flushes_ = 0;
         branches_ = 0;
@@ -61,20 +62,20 @@ public:
         /* locality = 0 --> local history, local FSM */
         if((!isGlobalHist_) && (!isGlobalTable_))
             locality_ = 0;
-            /* locality = 1 --> local history, global FSM */
+        /* locality = 1 --> local history, global FSM */
         else if((!isGlobalHist_) && (isGlobalTable_))
             locality_ = 1;
-            /* locality = 2 --> global history, global FSM */
+        /* locality = 2 --> global history, global FSM */
         else if((isGlobalHist_) && (isGlobalTable_))
             locality_ = 2;
-            /* locality = 3 --> global history, local FSM */
+        /* locality = 3 --> global history, local FSM */
         else
             locality_ = 3;
 
 
         /*creating the BTB itself by vector of rows*/
         for (int i=0; i<btbSize_; i++)
-            rows.push_back(row());
+           rows.push_back(row());
 
 
         /*initializing the FSM in a case it is global*/
@@ -82,11 +83,7 @@ public:
             for (int i = 0; i < pow(2, historySize_); i++)
                 globalFsm.push_back(fsmState_);
 
-            /*PAY ATTENTION : We don't need to initialize the FSM in a case it is local
-            since we will do it in update function BUT because there is a problem from
-             avoid doing this after that in predict and update function we finally do this*/
-
-            /*initializing the FSM in a case it is local*/
+        /*initializing the FSM in a case it is local*/
         else
         {
             for (int i=0; i<btbSize_; i++)
@@ -106,7 +103,7 @@ public:
         /*extracting the bits used for mapping the row in the BTB*/
         int mappedRow = bitExtracted((int)pc, (int)log2(btbSize_), 3);
         int* state = nullptr;
-        // if(btb->rows[mappedRow].valid_==0)
+       // if(btb->rows[mappedRow].valid_==0)
         //    return state;
         /*extracting the current fsm state*/
         if(locality_ == 0)
@@ -146,8 +143,8 @@ public:
      */
     void fsmUpdate(bool taken, int* state)
     {
-        // if(state == nullptr)
-        //     return;
+       // if(state == nullptr)
+       //     return;
         if((*state == 0 && taken == 0) || (*state == 3 && taken == 1))
             return;
         else
@@ -185,12 +182,12 @@ public:
 
 
 int BP_init(unsigned btbSize, unsigned historySize, unsigned tagSize, unsigned fsmState,
-            bool isGlobalHist, bool isGlobalTable, int Shared)
+        bool isGlobalHist, bool isGlobalTable, int Shared)
 {
     btb = new(nothrow) BTB(btbSize,historySize,tagSize,fsmState,isGlobalHist,
-                           isGlobalTable,Shared);
+                                                        isGlobalTable,Shared);
     if(btb == nullptr)
-        return -1;
+       return -1;
     return 0;
 }//BP_init
 
@@ -206,11 +203,11 @@ bool BP_predict(uint32_t pc, uint32_t *dst)
         *dst = btb->rows[mappedRow].target_;
         return true;
     }
-        /* other 3 options : 1. current branch is in the table but not taken
-        *                    2. there is a branch in the mapped row but its not the same
-        *                       branch(different tag)
-        *                    3. the mapped row is empty (valid=0);
-        */
+    /* other 3 options : 1. current branch is in the table but not taken
+    *                    2. there is a branch in the mapped row but its not the same
+    *                       branch(different tag)
+    *                    3. the mapped row is empty (valid=0);
+    */
     else
     {
         *dst = pc + 4;
@@ -229,13 +226,18 @@ void BP_update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst)
      *                 are different. happens when mapped row and tag aren't enough to
      *                 distinguish between different branches
      */
-    int* state = btb->extractFsmState(pc); //predicted resolution
-    //int predicted = (*state>1)? 1:0;
-    //if((predicted || taken)&&(targetPc != pred_dst))
-    bool my_predict = (targetPc == pred_dst);
-    if (my_predict != taken)
-        btb->flushes_++;
 
+    //iterationTime++;
+    //int* state = btb->extractFsmState(pc); //predicted resolution
+    //int predicted = (*state>1)? 1:0;
+   // if((predicted || taken)&&(targetPc != pred_dst))
+    //    ariel_flushes++;
+   // bool my_predict = (targetPc == pred_dst);
+   // if (my_predict != taken)
+    //    btb->flushes_++;
+    uint32_t actualTarget = (taken)? targetPc : pc+4;
+    if(actualTarget != pred_dst)
+        btb->flushes_++;
     /* the update itself */
     int mappedRow = bitExtracted((int)pc, (int)log2(btb->btbSize_), 3);
     int inputTag = bitExtracted((int)pc, (int)btb->tagSize_, 3+(int)log2(btb->btbSize_));
@@ -283,7 +285,7 @@ void BP_GetStats(SIM_stats *curStats)
             break;
         case 3:
             curStats->size = btb->historySize_ + btb->btbSize_ *
-                                                 (btb->tagSize_ + 30 +(int)pow(2, btb->historySize_ + 1));
+                             (btb->tagSize_ + 30 +(int)pow(2, btb->historySize_ + 1));
             break;
     }//switch
     delete(btb); //frees the dynamic memory allocated in the Ctor
