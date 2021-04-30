@@ -4,7 +4,13 @@ import glob
 import os
 import sys
 import subprocess as sp
-import pandas as pd
+
+def read_csv(file):
+    f = open(file, 'r')
+    lines = f.readlines()
+    f.close()
+    pair = [l.strip().split(',') for l in lines]
+    return pair
 
 args = sys.argv
 print(args)
@@ -12,10 +18,10 @@ print(args)
 #files = glob.glob('input_examples/*', recursive=True)
 #print(files)
 
-test = pd.read_csv("tests.csv", header=None)
+test = read_csv("./tests.csv")
 #print(test)
 ret_ = 0
-for i, t in test.iterrows():
+for i, t in enumerate(test):
     #print(t)
     f = open("./tmp.txt", 'w')
     arg = "{} {}".format(args[1], t[0])
