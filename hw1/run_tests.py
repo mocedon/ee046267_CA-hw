@@ -48,6 +48,7 @@ for i, t in enumerate(test):
             ret_ += ret
     else:
         print("Run Failed with error {}".format(ret))
+        ret_ += 1
 
 print("Test Finished with {} errors".format(ret_))
 
