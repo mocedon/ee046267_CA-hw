@@ -47,7 +47,7 @@ for i, t in enumerate(test):
             print("\t\tFailed on {} lines".format(ret))
             ret_ += ret
     else:
-        print("Run Failed".format(ret))
+        print("Run Failed with error {}".format(ret))
 
 print("Test Finished with {} errors".format(ret_))
 
