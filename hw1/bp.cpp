@@ -9,8 +9,7 @@ using namespace std;
 //defining global variables in a case of global FSM/history
 int globalHistory = 0;
 vector <int> globalFsm;
-//int iterationTime=0;
-//int ariel_flushes=0;
+
 //the following method's aim is to extract k bits from specific position p in a given number
 int bitExtracted(int number, int k, int p)
 {
@@ -21,7 +20,7 @@ int bitExtracted(int number, int k, int p)
 class row{
 public:
     row():valid_(0),tag_(0),target_(0),history_(0){}; //C'tor
-        //  לשים לב להערה שכתבתי בטאבלט
+
     int valid_; // 0 = this instruction wasn't mapped to the BTB, 1=it was
     int tag_;
     int target_;
@@ -80,15 +79,18 @@ public:
 
         /*initializing the FSM in a case it is global*/
         if ((locality_ == 1) || (locality_ == 2))
+        {
+            globalFsm.clear();
             for (int i = 0; i < pow(2, historySize_); i++)
                 globalFsm.push_back(fsmState_);
-
+        }
         /*initializing the FSM in a case it is local*/
         else
         {
             for (int i=0; i<btbSize_; i++)
             {
                 vector <int> temp;
+                temp.clear();
                 fsm.push_back(temp);
                 for (int j = 0; j < pow(2, historySize_); j++) {
                     fsm[i].push_back(fsmState_);
@@ -102,9 +104,8 @@ public:
     {
         /*extracting the bits used for mapping the row in the BTB*/
         int mappedRow = bitExtracted((int)pc, (int)log2(btbSize_), 3);
-        int* state = nullptr;
-       // if(btb->rows[mappedRow].valid_==0)
-        //    return state;
+        int* state;
+
         /*extracting the current fsm state*/
         if(locality_ == 0)
             state = &btb->fsm[mappedRow][btb->rows[mappedRow].history_];
@@ -157,9 +158,7 @@ public:
     }//fsmUpdate
 
 
-    /*historyUpdate
-     *
-     **/
+    /*historyUpdate*/
     void historyUpdate(bool taken, uint32_t pc) {
         int mappedRow = bitExtracted((int) pc, (int) log2(btbSize_), 3);
         //help bits arr all equal to 1 and its length is history length
@@ -217,8 +216,6 @@ bool BP_predict(uint32_t pc, uint32_t *dst)
 
 void BP_update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst)
 {
-    // PAY ATTENTION : assuming target isn't changed for specific branch through the program
-
     btb->branches_++;
 
     /*cases for flush: 1.predicted resolution and target differs from actual resolution and target
@@ -227,17 +224,10 @@ void BP_update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst)
      *                 distinguish between different branches
      */
 
-    //iterationTime++;
-    //int* state = btb->extractFsmState(pc); //predicted resolution
-    //int predicted = (*state>1)? 1:0;
-   // if((predicted || taken)&&(targetPc != pred_dst))
-    //    ariel_flushes++;
-   // bool my_predict = (targetPc == pred_dst);
-   // if (my_predict != taken)
-    //    btb->flushes_++;
-    uint32_t actualTarget = (taken)? targetPc : pc+4;
+    uint32_t actualTarget = (taken)? targetPc : (pc+4);
     if(actualTarget != pred_dst)
         btb->flushes_++;
+
     /* the update itself */
     int mappedRow = bitExtracted((int)pc, (int)log2(btb->btbSize_), 3);
     int inputTag = bitExtracted((int)pc, (int)btb->tagSize_, 3+(int)log2(btb->btbSize_));
@@ -252,14 +242,16 @@ void BP_update(uint32_t pc, uint32_t targetPc, bool taken, uint32_t pred_dst)
         if(!btb->isGlobalHist_)//local history
             btb->rows[mappedRow].history_ = 0;
         if(!btb->isGlobalTable_)//local FSM
+        {
+            btb->fsm[mappedRow].clear();
             for (int j = 0; j < pow(2, btb->historySize_); j++)
                 btb->fsm[mappedRow].push_back(btb->fsmState_);
-
-        btb->rows[mappedRow].target_ =  (int)targetPc;
+        }
         btb->rows[mappedRow].tag_ =  (int)inputTag;
     }
 
     /* now we make the updates that relevant to any case*/
+    btb->rows[mappedRow].target_ =  (int)targetPc;
     btb->fsmUpdate(taken,btb->extractFsmState(pc));
     btb->historyUpdate(taken,pc);
 }//BP_update
