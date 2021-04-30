@@ -31,7 +31,7 @@ for i, t in test.iterrows():
         ref_.close()
         for i in range(len(res)):
             if res[i].strip() != ref[i].strip():
-                print("    line:{:2d} mismatch : {:40} | {:40}".format(i, res[i].strip(), ref[i].strip()))
+                print("    line:{:2d} mismatch : {:40} | {:40}".format(i+1, res[i].strip(), ref[i].strip()))
                 ret += 1
 
         if ret == 0:
