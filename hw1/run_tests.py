@@ -24,7 +24,8 @@ ret_ = 0
 for i, t in enumerate(test):
     #print(t)
     f = open("./tmp.txt", 'w')
-    arg = "{} {}".format(args[1], t[0])
+    #arg = "{} {}".format(args[1], t[0])
+    arg = [args[1], t[0]]
     ret = sp.call(arg, stdout=f, stderr=f, shell=False)
     f.close()
     print("Test : {}".format(t[0]))
