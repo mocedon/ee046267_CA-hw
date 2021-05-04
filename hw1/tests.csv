@@ -21,3 +21,6 @@
 ./tests/example18.trc,./ref_results/example18.out
 ./tests/example19.trc,./ref_results/example19.out
 ./tests/example20.trc,./ref_results/example20.out
+./testsHW1/example1.trc,./testsHW1/example1.out
+./testsHW1/example2.trc,./testsHW1/example2.out
+./testsHW1/example3.trc,./testsHW1/example3.out
