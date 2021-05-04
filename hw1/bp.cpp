@@ -265,19 +265,19 @@ void BP_GetStats(SIM_stats *curStats)
     switch (btb->locality_)
     {
         case 0:
-            curStats->size = btb->btbSize_ * ((int)btb->tagSize_ + 30  + (int)btb->historySize_ + (int)pow(2, btb->historySize_ + 1));
+            curStats->size = btb->btbSize_ * ((int)btb->tagSize_ + 30 +1 + (int)btb->historySize_ + (int)pow(2, btb->historySize_ + 1));
             break;
         case 1:
-            curStats->size = btb->btbSize_ * ((int) btb->tagSize_ + 30 + (int) btb->historySize_)
+            curStats->size = btb->btbSize_ * ((int) btb->tagSize_ + 30 +1 + (int) btb->historySize_)
                              + (int) pow(2, btb->historySize_ + 1);
             break;
         case 2:
-            curStats->size = btb->btbSize_ * ( btb->tagSize_ + 30) + (int) btb->historySize_
+            curStats->size = btb->btbSize_ * ( btb->tagSize_ + 30 +1) + (int) btb->historySize_
                              + (int) pow(2, btb->historySize_ + 1);
             break;
         case 3:
             curStats->size = btb->historySize_ + btb->btbSize_ *
-                             (btb->tagSize_ + 30 +(int)pow(2, btb->historySize_ + 1));
+                             (btb->tagSize_ + 30 +1 +(int)pow(2, btb->historySize_ + 1));
             break;
     }//switch
     delete(btb); //frees the dynamic memory allocated in the Ctor
