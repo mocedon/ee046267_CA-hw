@@ -15,12 +15,26 @@ using std::cerr;
 using std::ifstream;
 using std::stringstream;
 
-/*** Global Functions ***/
 
-int bitExtracted(unsigned number, unsigned k, unsigned p)
+
+
+
+/*** System Methods ***/
+
+System::System(uint MemCyc, uint BSize, uint L1Size, uint L2Size, uint L1Assoc,uint L2Assoc,
+               uint L1Cyc, uint L2Cyc, uint WrAlloc):MemCyc_(MemCyc),BSize_(BSize),L1Cyc_(L1Cyc),L2Cyc_(L2Cyc),
+                                                                 WrAlloc_(WrAlloc), L1count_(0), L2count_(0), memCount_(0)
 {
-    return (((1 << k) -1) & (number >> (p-1)));
+
+    arr.push_back(Cache(L1Size, L1Assoc, BSize));
+    arr.push_back(Cache(L2Size, L2Assoc, BSize));
+}//System C`tor
+
+void System::runCommand(char op, string cutAddr)
+{
+
 }
+
 
 
 
@@ -29,135 +43,24 @@ int bitExtracted(unsigned number, unsigned k, unsigned p)
 /*C'tor Cache
  *
  * */
-Cache::Cache(unsigned CSize, unsigned ways):CSize_(CSize), ways_(ways)
+Cache::Cache(uint CSize, uint ways, uint BSize):CSize_(CSize), ways_(ways), BSize_(BSize)
 {
-    setBitsNum_ = CSize_ - (sys.Bsize_ + ways_); //this calculation is according to logarithm rules
+    set_ = CSize - BSize - ways; //this calculation is according to logarithm rules
 
-    for (unsigned int i=0; i<pow(2, setBitNum_); i++)
+    vector<Block> line((2u << ways), Block());
+    for (uint i = 0; i < (2u << set_); i++)
     {
-        vector <Block()> line;
         cache.push_back(line);
-        {
-            for (unsigned int i=0; i<pow(2, ways_); i++)
-                line.push_back(Block());
-        }
-    }
-
-    isDirectMap_ = (ways_==0)? true:false;
-}
-
-
-
-/* return value :  -1= not found and whole line is occupied so we need to evict
- *                  0= not found but there is an available place in the line, assign to added pointer
- *                  the way of chosen block to occupy
- *                  1= found in cache, assign to added pointer the way of found block
- */
-int Cache::findInCacheLevel(unsigned level, unsigned addr, unsigned* way)
-{
-    unsigned lev = level - 1; // level 1 is located in index 0
-    unsigned tagPos = sys.arr[lev].setBitsNum_ + pow(2,sys.BSize_);
-    unsigned tag = bitExtracted(addr,ADDRESS_BITS_NUM - tagPos, tagPos);
-    unsigned set = bitExtracted(addr, sys.arr[lev].setBitsNum_, pow(2,sys.BSize_));
-
-    for (int i = 0; i < pow(2,sys.arr[lev].ways_); ++i)
-    {
-        if(sys.arr[lev][set][i].valid_ == 0) //there is a place in the line
-        {
-            *way = i;
-            return AVAILABLE;
-        }
-        //here we know that the current block is valid
-        if(sys.arr[lev][set][i].tag_ == tag)
-        {
-            *way = i;
-            return FOUND;
-        }
-    }
-    //here we know that there is no place in the whole line so we need to evict
-    return EVICT;
-}
-
-
-/*
- * return value : way of chosen block to be evicted
- * NOTE : this function is called only in case that "findInCacheLevel" result was EVICT
- * */
-unsigned Cache::findVictim(unsigned level, unsigned addr)
-{
-    unsigned lev = level - 1; // level 1 is located in index 0
-    //special case - direct mapping so there is no need to find victim
-    if(sys.arr[lev].isDirectMap)
-        return 0; //first and only way of single block in line
-    unsigned set = bitExtracted(addr, sys.arr[lev].setBitsNum_, pow(2,sys.BSize_));
-    for (int i = 0; i < pow(2,sys.arr[lev].ways_); ++i)
-    {
-        if(sys.arr[lev][set][i].LRU_ == 0)
-            return i;
     }
 }
 
-
-/*
- * according to the algorithm learned in lectures
- * NOTE : this function would be called only in case that cache level is NOT direct mapped
- */
-void Cache::lruUpdate(int level, unsigned addr, unsigned accessedWay)
-{
-    unsigned lev = level - 1; // level 1 is located in index 0
-    unsigned set = bitExtracted(addr, sys.arr[lev].setBitsNum_, pow(2,sys.BSize_));
-
-    //updating LRU of accessed block
-    oldLRU = sys.arr[lev][set][accessedWay].LRU_;
-    sys.arr[lev][set][accessedWay].LRU_ = pow(2,sys.arr[lev].ways_) - 1;
-
-    //updating LRU of other blocks in line
-    for (int i = 0; i < pow(2,sys.arr[lev].ways_); ++i)
-    {
-        if(i!=accessedWay)&&(sys.arr[lev][set][i].valid)&&(sys.arr[lev][set][i].LRU > oldLRU)
-        sys.arr[lev][set][i].LRU--;
-    }
-}
-
-
-
-
-/*** System Methods ***/
-
-System::System(unsigned MemCyc, unsigned BSize, unsigned L1Size, unsigned L2Size, unsigned L1Assoc,unsigned L2Assoc,
-               unsigned L1Cyc, unsigned L2Cyc, unsigned WrAlloc):MemCyc_(MemCyc),BSize_(BSize),L1Cyc_(L1Cyc),L2Cyc_(L2Cyc),
-                                                                 WrAlloc_(WrAlloc), L1count_(0), L2count_(0), memCount_(0)
-{
-    arr[0] = Cache(L1Size, L1Assoc);
-    arr[1] = Cache(L2Size, L2Assoc);
-}//System C`tor
-
-void System::runCommand(char op, string cutAddr)
-{
-
-}
-
-double System::L1MissRateCalc()
-{
-    return(1-(sys.L1count_ - sys.L1count_)/sys.L1count_);
-}
-
-double System::L2MissRateCalc()
-{
-    return(1-(sys.L2count_ - sys.memCount_)/sys.L2count_);
-}
-
-double System::avgAccTimeCalc(double L1MissRate, double L2MissRate)
-{
-    return(sys.L1Cyc_ + L1MissRate * (sys.L2Cyc_ + L2MissRate * sys.MemCyc_));
-}
 
 
 
 
 
 int main(int argc, char **argv){
-
+    
     if (argc < 19) {
         cerr << "Not enough arguments" << endl;
         return 0;
@@ -176,7 +79,7 @@ int main(int argc, char **argv){
         return 0;
     }
 
-    unsigned MemCyc = 0, BSize = 0, L1Size = 0, L2Size = 0, L1Assoc = 0,
+    uint MemCyc = 0, BSize = 0, L1Size = 0, L2Size = 0, L1Assoc = 0,
             L2Assoc = 0, L1Cyc = 0, L2Cyc = 0, WrAlloc = 0;
 
     for (int i = 2; i < 19; i += 2) {
@@ -224,9 +127,11 @@ int main(int argc, char **argv){
 
     }
 
-    double L1MissRate = L1MissRateCalc();
-    double L2MissRate = L2MissRateCalc();
-    double avgAccTime = avgAccTimeCalc(L1MissRate, L2MissRate);
+    double L1MissRate;
+    double L2MissRate;
+    double avgAccTime;
+
+
 
     printf("L1miss=%.03f ", L1MissRate);
     printf("L2miss=%.03f ", L2MissRate);
