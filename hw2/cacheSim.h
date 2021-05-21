@@ -34,6 +34,7 @@ private:
     // fields:
     bool valid_; // 0 = empty block
     bool dirty_; //0=not dirty regarding the lower level
+    uint addr_;
     uint tag_;
     uint LRU_;
 public:
@@ -56,6 +57,14 @@ public:
         Block::dirty_ = dirty_;
     }
 
+    uint getAddr_() const {
+        return addr_;
+    }
+
+    void setAddr_(uint addr_) {
+        Block::addr_ = addr_;
+    }
+
     uint getTag() const {
         return tag_;
     }
@@ -74,23 +83,7 @@ public:
 
 
 };//class Block
-/*
-// *                             *****is the class really NECESSARY?
-class Line
-{
-public:
-    // fields:
-    vector <Block> line;
-    //int ID_; // mapped by set *****NECESSARY?
 
-    //methods:
-    Line(unsigned ways)
-    {
-        for (unsigned int i=0; i<pow(2, ways); i++)
-            line.push_back(Block());
-    }//C`tor Line
-};
-*/
 
 class Cache
 {
@@ -113,7 +106,7 @@ public:
         uint ones = 0xFFFFFFFF;
         return (addr >> (CSize_ + BSize_)) & ones;
     }
-
+/*
     uint getBlock(uint addr){
         uint set = getSet(addr);
         uint tag = getTag(addr);
@@ -125,7 +118,7 @@ public:
         }
 
     }
-
+*/
     bool isBlock(uint addr){
         uint set = getSet(addr);
         uint tag = getTag(addr);
@@ -135,6 +128,16 @@ public:
                 return true;
         }
         return false;
+    }
+
+    void setInvalid(uint addr){
+        uint set = getSet(addr);
+        uint tag = getTag(addr);
+
+        for (auto& block : cache[set]){
+            if ((block.getTag() == tag) && block.isValid())
+                block.setValid(false);
+        }
     }
 
     void updateLRU(uint addr){
@@ -180,7 +183,17 @@ public:
         return false;
     }
 
-    bool isSetFree(uint addr){
+    void setDirty(uint addr){
+        uint set = getSet(addr);
+        uint tag = getTag(addr);
+
+        for (auto& block : cache[set]){
+            if ((block.getTag() == tag))
+                block.setDirty(true);
+        }
+    }
+
+    bool isFree(uint addr){
         uint set = getSet(addr);
         for (auto& block : cache[set]){
             if (!(block.isValid()))
@@ -189,12 +202,13 @@ public:
         return false;
     }
 
-    void chooseVictim(uint addr){
+    uint chooseVictim(uint addr){
         uint set = getSet(addr);
         uint maxLRU = (2u << ways_);
         for (auto& block : cache[set]){
             if (block.getLRU() == maxLRU)
                 block.setValid(false);
+                return block.getAddr_();
         }
     }
 
@@ -203,8 +217,10 @@ public:
         uint tag = getTag(addr);
         for (auto& block : cache[set]){
             if (!(block.isValid())){
+                block.setAddr_(addr);
                 block.setTag(tag);
                 block.setValid(true);
+                block.setDirty(false);
                 updateLRU(addr);
             }
         }
@@ -222,18 +238,36 @@ public:
     uint L2count_;
     uint memCount_;
     uint MemCyc_;
-    uint BSize_;                    //      *****  LOG FORM  *****
     uint L1Cyc_;//latency for searching (+access) data in cache
     uint L2Cyc_;
     uint WrAlloc_;// 1=Write Allocate, 0=Write No Allocate
-    vector<Cache> arr; //containing cache levels - L1 in arr[0], L2 in arr[1]
+    Cache L1; // L1 cache
+    Cache L2; // L2 cache
 
     //methods
     System(uint MemCyc, uint BSize, uint L1Size, uint L2Size, uint L1Assoc,uint L2Assoc,
            uint L1Cyc, uint L2Cyc, uint WrAlloc);
 
 
-    void runCommand(char op, string cutAddr);
+    void runCommand(char op, uint addr);
+
+    void calcStats(double& L1miss, double& L2miss, double& avgTime){
+        L1miss =(L1count_ - L2count_) / L1count_;
+        L2miss = (L2count_ - memCount_) / L2count_;
+        avgTime = L1Cyc_ + (L2Cyc_ * L1miss) + (MemCyc_ * L1miss + L2miss);
+    }
+
+    void accessL1(){
+        L1count_++;
+    }
+
+    void accessL2(){
+        L2count_++;
+    }
+
+    void accessMem(){
+        memCount_++;
+    }
 
 };//class System
 

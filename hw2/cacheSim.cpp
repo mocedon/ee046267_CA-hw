@@ -22,17 +22,56 @@ using std::stringstream;
 /*** System Methods ***/
 
 System::System(uint MemCyc, uint BSize, uint L1Size, uint L2Size, uint L1Assoc,uint L2Assoc,
-               uint L1Cyc, uint L2Cyc, uint WrAlloc):MemCyc_(MemCyc),BSize_(BSize),L1Cyc_(L1Cyc),L2Cyc_(L2Cyc),
-                                                                 WrAlloc_(WrAlloc), L1count_(0), L2count_(0), memCount_(0)
+               uint L1Cyc, uint L2Cyc, uint WrAlloc):MemCyc_(MemCyc),L1Cyc_(L1Cyc),L2Cyc_(L2Cyc),
+               WrAlloc_(WrAlloc), L1count_(0), L2count_(0), memCount_(0),
+               L1(L1Size, L1Assoc, BSize), L2(L2Size, L2Assoc, BSize) {}//System C`tor
+
+void System::runCommand(char op, uint addr)
 {
+    if (op == 'r'){ // Operation is read
+        accessL1();
+        if (L1.isBlock(addr)){ // Search L1 for block
+            // Block in L1
+            L1.updateLRU(addr);
+            cout << "L1 hit" << endl;
+        }
+        else { // Block not in L1
+            cout << "L1 miss";
+            if (!(L1.isFree(addr))){ // Check if L1 has space to fit a new block
+                // Set if full
+                uint vic = L1.chooseVictim(addr);
+                if (L1.isDirty(vic))
+                    L2.writeBlock(vic);
+                cout << " - evict " << vic << endl;
+            }
+            // Search in L2
+            accessL2();
+            if (L2.isBlock(addr)){
+                // Block in L2
+                L2.updateLRU(addr);
+                cout << endl << "L2 hit" << endl;
+            }
+            else { // Block not in L2
+                cout << "L2 miss";
+                if (!(L2.isFree(addr))){ // Check if L2 has space to fit a new block
+                    uint vic = L2.chooseVictim(addr);
+                    cout << " - evict L2 " << vic;
+                    if (L1.isBlock(vic)){ // Victim in L1
+                        if (L1.isDirty(vic))
+                            L2.setDirty(vic);
+                        L1.setInvalid(vic);
+                        cout << " - evict L1 ";
+                    }
+                }
+                accessMem();
+                L2.newBlock(addr);
+            }
+            L1.newBlock(addr);
+        }
+    }
+    else{ // Operation is write
 
-    arr.push_back(Cache(L1Size, L1Assoc, BSize));
-    arr.push_back(Cache(L2Size, L2Assoc, BSize));
-}//System C`tor
-
-void System::runCommand(char op, string cutAddr)
-{
-
+    }
 }
 
 
@@ -125,14 +164,14 @@ int main(int argc, char **argv){
         num = strtoul(cutAddress.c_str(), NULL, 16);
         cout << "Op " << operation << " Addr "<<address << " CA " << num << endl;
 // *******************   HERE WE NEED TO EXECUTE THE OPERATION     **********************
-
+        sys.runCommand(operation, num)
     }
 
     double L1MissRate = 0;
     double L2MissRate = 0;
     double avgAccTime = 0;
 
-
+    sys.calcStats(L1MissRate, L2MissRate, avgAccTime);
 
     printf("L1miss=%.03f ", L1MissRate);
     printf("L2miss=%.03f ", L2MissRate);
