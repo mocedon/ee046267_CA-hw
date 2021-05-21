@@ -39,7 +39,7 @@ private:
     uint LRU_;
 public:
     //methods:
-    Block():valid_(0), tag_(0), dirty_(0), LRU_(0){}
+    Block():valid_(0), dirty_(0),addr_(0), tag_(0), LRU_(0){}
 
     bool isValid() const {
         return valid_;
@@ -79,7 +79,7 @@ public:
 
     void setLRU(uint LRU_) {
         Block::LRU_ = LRU_;
-    }; //C'tor
+    }
 
 
 };//class Block
@@ -99,12 +99,16 @@ public:
     Cache(uint CSize, uint ways, uint BSize);
 
     uint getSet(uint addr){
-        return bitExt(addr, BSize_ + CSize_, BSize_);
+        uint blockS = pow(2, BSize_);
+        uint setS = pow(2, set_);
+        return bitExt(addr, setS, blockS);
     }
 
     uint getTag(uint addr){
         uint ones = 0xFFFFFFFF;
-        return (addr >> (CSize_ + BSize_)) & ones;
+        uint blockS = pow(2, BSize_);
+        uint setS = pow(2, set_);
+        return (addr >> (blockS+setS)) & ones;
     }
 /*
     uint getBlock(uint addr){
@@ -156,7 +160,7 @@ public:
             if ((block.getLRU() < curr) && block.isValid())
                 block.setLRU(block.getLRU() + 1);
         }
-        b->setLRU(1);
+        b->setLRU(1); // 1 means the most recently used in line
 
     }
 
@@ -204,7 +208,7 @@ public:
 
     uint chooseVictim(uint addr){
         uint set = getSet(addr);
-        uint maxLRU = (2u << ways_);
+        uint maxLRU = (1u << ways_);
         for (auto& block : cache[set]){
             if (block.getLRU() == maxLRU)
                 block.setValid(false);
