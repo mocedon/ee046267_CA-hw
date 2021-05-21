@@ -60,7 +60,7 @@ Cache::Cache(uint CSize, uint ways, uint BSize):CSize_(CSize), ways_(ways), BSiz
 
 
 int main(int argc, char **argv){
-    
+
     if (argc < 19) {
         cerr << "Not enough arguments" << endl;
         return 0;
@@ -123,13 +123,14 @@ int main(int argc, char **argv){
 
         unsigned long int num = 0;
         num = strtoul(cutAddress.c_str(), NULL, 16);
+        cout << "Op " << operation << " Addr "<<address << " CA " << num << endl;
 // *******************   HERE WE NEED TO EXECUTE THE OPERATION     **********************
 
     }
 
-    double L1MissRate;
-    double L2MissRate;
-    double avgAccTime;
+    double L1MissRate = 0;
+    double L2MissRate = 0;
+    double avgAccTime = 0;
 
 
 

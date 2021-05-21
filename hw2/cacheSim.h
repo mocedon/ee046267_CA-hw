@@ -138,6 +138,22 @@ public:
     }
 
     void updateLRU(uint addr){
+        uint set = getSet(addr);
+        uint tag = getTag(addr);
+
+        uint curr;
+        Block* b;
+        for (auto& block : cache[set]) {
+            if (block.getTag() == tag) {
+                curr = block.getLRU();
+                b = &block;
+            }
+        }
+        for (auto& block : cache[set]) {
+            if ((block.getLRU() < curr) && block.isValid())
+                block.setLRU(block.getLRU() + 1);
+        }
+        b->setLRU(1);
 
     }
 
