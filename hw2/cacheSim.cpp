@@ -92,7 +92,7 @@ Cache::Cache(uint CSize, uint ways, uint BSize):CSize_(CSize), ways_(ways), BSiz
 {
     set_ = CSize - BSize - ways; //this calculation is according to logarithm rules
 
-    vector<Block> line((1u << ways), Block());
+    vector<Block> line((1u << ways), Block(1u << ways));
     for (uint i = 0; i < (1u << set_); i++)
     {
         cache.push_back(line);
