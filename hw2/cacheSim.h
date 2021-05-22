@@ -99,12 +99,16 @@ public:
     Cache(uint CSize, uint ways, uint BSize);
 
     uint getSet(uint addr){
-        return bitExt(addr, set_, BSize_);
+        uint blockS = pow(2, BSize_);
+        uint setS = pow(2, set_);
+        return bitExt(addr, setS, blockS);
     }
 
     uint getTag(uint addr){
         uint ones = 0xFFFFFFFF;
-        return (addr >> (BSize_+set_)) & ones;
+        uint blockS = pow(2, BSize_);
+        uint setS = pow(2, set_);
+        return (addr >> (blockS+setS)) & ones;
     }
 /*
     uint getBlock(uint addr){
