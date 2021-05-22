@@ -39,7 +39,7 @@ private:
     uint LRU_;
 public:
     //methods:
-    Block():valid_(0), tag_(0), dirty_(0), LRU_(0){}
+    Block():valid_(0), dirty_(0), tag_(0), addr_(0), LRU_(0){}
 
     bool isValid() const {
         return valid_;
@@ -99,12 +99,11 @@ public:
     Cache(uint CSize, uint ways, uint BSize);
 
     uint getSet(uint addr){
-        return bitExt(addr, BSize_ + CSize_, BSize_);
+        return bitExt(addr, set_, BSize_);
     }
 
     uint getTag(uint addr){
-        uint ones = 0xFFFFFFFF;
-        return (addr >> (CSize_ + BSize_)) & ones;
+        return bitExt(addr, ADDR_BITS - set_ - BSize_, BSize_ + set_);
     }
 /*
     uint getBlock(uint addr){
@@ -156,7 +155,7 @@ public:
             if ((block.getLRU() < curr) && block.isValid())
                 block.setLRU(block.getLRU() + 1);
         }
-        b->setLRU(1);
+        b->setLRU(1); // 1 is most recently used
 
     }
 
@@ -204,7 +203,7 @@ public:
 
     uint chooseVictim(uint addr){
         uint set = getSet(addr);
-        uint maxLRU = (2u << ways_);
+        uint maxLRU = (1u << ways_);
         for (auto& block : cache[set]){
             if (block.getLRU() == maxLRU)
                 block.setValid(false);
@@ -252,8 +251,10 @@ public:
     void runCommand(char op, uint addr);
 
     void calcStats(double& L1miss, double& L2miss, double& avgTime){
-        L1miss =(L1count_ - L2count_) / L1count_;
-        L2miss = (L2count_ - memCount_) / L2count_;
+        if (L1count_)
+            L1miss =(L1count_ - L2count_) / L1count_;
+        if (L2count_)
+            L2miss = (L2count_ - memCount_) / L2count_;
         avgTime = L1Cyc_ + (L2Cyc_ * L1miss) + (MemCyc_ * L1miss + L2miss);
     }
 

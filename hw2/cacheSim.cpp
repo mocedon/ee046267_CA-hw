@@ -28,12 +28,15 @@ System::System(uint MemCyc, uint BSize, uint L1Size, uint L2Size, uint L1Assoc,u
 
 void System::runCommand(char op, uint addr)
 {
+    cout << "L1 : set = " <<L1.getSet(addr) << " ; tag = "<< L1.getTag(addr) << endl;
+    cout << "L2 : set = " <<L2.getSet(addr) << " ; tag = "<< L2.getTag(addr) << endl;
+
     if (op == 'r'){ // Operation is read
         accessL1();
         if (L1.isBlock(addr)){ // Search L1 for block
             // Block in L1
             L1.updateLRU(addr);
-            cout << "L1 hit" << endl;
+            cout << "L1 hit" << " ; ";
         }
         else { // Block not in L1
             cout << "L1 miss";
@@ -42,14 +45,15 @@ void System::runCommand(char op, uint addr)
                 uint vic = L1.chooseVictim(addr);
                 if (L1.isDirty(vic))
                     L2.writeBlock(vic);
-                cout << " - evict " << vic << endl;
+                cout << " - evict " << vic;
             }
+            cout << " ; ";
             // Search in L2
             accessL2();
             if (L2.isBlock(addr)){
                 // Block in L2
                 L2.updateLRU(addr);
-                cout << endl << "L2 hit" << endl;
+                cout << ";" << "L2 hit" << ";";
             }
             else { // Block not in L2
                 cout << "L2 miss";
@@ -63,10 +67,12 @@ void System::runCommand(char op, uint addr)
                         cout << " - evict L1 ";
                     }
                 }
+                cout << " ; ";
                 accessMem();
                 L2.newBlock(addr);
             }
             L1.newBlock(addr);
+            cout << endl;
         }
     }
     else{ // Operation is write
@@ -86,8 +92,8 @@ Cache::Cache(uint CSize, uint ways, uint BSize):CSize_(CSize), ways_(ways), BSiz
 {
     set_ = CSize - BSize - ways; //this calculation is according to logarithm rules
 
-    vector<Block> line((2u << ways), Block());
-    for (uint i = 0; i < (2u << set_); i++)
+    vector<Block> line((1u << ways), Block());
+    for (uint i = 0; i < (1u << set_); i++)
     {
         cache.push_back(line);
     }
@@ -164,7 +170,7 @@ int main(int argc, char **argv){
         num = strtoul(cutAddress.c_str(), NULL, 16);
         cout << "Op " << operation << " Addr "<<address << " CA " << num << endl;
 // *******************   HERE WE NEED TO EXECUTE THE OPERATION     **********************
-        sys.runCommand(operation, num)
+        sys.runCommand(operation, num);
     }
 
     double L1MissRate = 0;
