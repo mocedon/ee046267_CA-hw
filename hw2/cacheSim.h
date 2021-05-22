@@ -39,7 +39,7 @@ private:
     uint LRU_;
 public:
     //methods:
-    Block(uint LRU):valid_(0), dirty_(0), tag_(0), addr_(0), LRU_(LRU){}
+    Block():valid_(0), dirty_(0), tag_(0), addr_(0), LRU_(0){}
 
     bool isValid() const {
         return valid_;
@@ -134,10 +134,8 @@ public:
         uint tag = getTag(addr);
 
         for (auto& block : cache[set]){
-            if ((block.getTag() == tag) && block.isValid()) {
+            if ((block.getTag() == tag) && block.isValid())
                 block.setValid(false);
-                block.setLRU(1u << ways_); // Does not play a part
-            }
         }
     }
 
@@ -148,7 +146,7 @@ public:
         uint curr;
         Block* b;
         for (auto& block : cache[set]) {
-            if (block.getTag() == tag && block.isValid()) {
+            if (block.getTag() == tag) {
                 curr = block.getLRU();
                 b = &block;
             }
@@ -157,7 +155,7 @@ public:
             if ((block.getLRU() < curr) && block.isValid())
                 block.setLRU(block.getLRU() + 1);
         }
-        b->setLRU(0); // 0 is most recently used
+        b->setLRU(1); // 1 is most recently used
 
     }
 
@@ -191,7 +189,6 @@ public:
         for (auto& block : cache[set]){
             if ((block.getTag() == tag))
                 block.setDirty(true);
-            return;
         }
     }
 
@@ -206,12 +203,11 @@ public:
 
     uint chooseVictim(uint addr){
         uint set = getSet(addr);
-        uint maxLRU = (1u << ways_) - 1;
+        uint maxLRU = (1u << ways_);
         for (auto& block : cache[set]){
-            if ((block.getLRU() == maxLRU) && block.isValid()) {
+            if (block.getLRU() == maxLRU)
                 block.setValid(false);
                 return block.getAddr_();
-            }
         }
     }
 
@@ -225,7 +221,6 @@ public:
                 block.setValid(true);
                 block.setDirty(false);
                 updateLRU(addr);
-                return;
             }
         }
     }
