@@ -189,9 +189,10 @@ public:
         uint tag = getTag(addr);
 
         for (auto& block : cache[set]){
-            if ((block.getTag() == tag))
+            if ((block.getTag() == tag) && block.isValid()) {
                 block.setDirty(true);
-            return;
+                return;
+            }
         }
     }
 
