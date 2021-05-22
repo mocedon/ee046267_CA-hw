@@ -258,10 +258,10 @@ public:
 
     void calcStats(double& L1miss, double& L2miss, double& avgTime){
         if (L1count_)
-            L1miss =(L1count_ - L2count_) / L1count_;
+            L1miss = (double)(L2count_) / L1count_;
         if (L2count_)
-            L2miss = (L2count_ - memCount_) / L2count_;
-        avgTime = L1Cyc_ + (L2Cyc_ * L1miss) + (MemCyc_ * L1miss + L2miss);
+            L2miss = (double)(memCount_) / L2count_;
+        avgTime = L1Cyc_ + ((double)L2Cyc_ * L1miss) + ((double)MemCyc_ * L1miss * L2miss);
     }
 
     void accessL1(){
@@ -274,6 +274,11 @@ public:
 
     void accessMem(){
         memCount_++;
+    }
+
+    bool blockAlloc(char op){
+
+        return ((op == 'r') || ((WrAlloc_ == 1) && (op == 'w')));
     }
 
 };//class System
