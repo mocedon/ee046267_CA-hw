@@ -86,8 +86,8 @@ Cache::Cache(uint CSize, uint ways, uint BSize):CSize_(CSize), ways_(ways), BSiz
 {
     set_ = CSize - BSize - ways; //this calculation is according to logarithm rules
 
-    vector<Block> line((1u << ways), Block());
-    for (uint i = 0; i < (1u << set_); i++)
+    vector<Block> line((2u << ways), Block());
+    for (uint i = 0; i < (2u << set_); i++)
     {
         cache.push_back(line);
     }
@@ -164,7 +164,7 @@ int main(int argc, char **argv){
         num = strtoul(cutAddress.c_str(), NULL, 16);
         cout << "Op " << operation << " Addr "<<address << " CA " << num << endl;
 // *******************   HERE WE NEED TO EXECUTE THE OPERATION     **********************
-        sys.runCommand(operation, num);
+        sys.runCommand(operation, num)
     }
 
     double L1MissRate = 0;
