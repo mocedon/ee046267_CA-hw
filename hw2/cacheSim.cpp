@@ -89,7 +89,6 @@ void System::runCommand(char op, uint addr) {
         }
 
         cout << endl;
-      }
     }
 }
 
