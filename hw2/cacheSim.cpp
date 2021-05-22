@@ -26,13 +26,12 @@ System::System(uint MemCyc, uint BSize, uint L1Size, uint L2Size, uint L1Assoc,u
                WrAlloc_(WrAlloc), L1count_(0), L2count_(0), memCount_(0),
                L1(L1Size, L1Assoc, BSize), L2(L2Size, L2Assoc, BSize) {}//System C`tor
 
-void System::runCommand(char op, uint addr)
-{
-    cout << "L1 : set = " <<L1.getSet(addr) << " ; tag = "<< L1.getTag(addr) << endl;
-    cout << "L2 : set = " <<L2.getSet(addr) << " ; tag = "<< L2.getTag(addr) << endl;
+void System::runCommand(char op, uint addr) {
+    cout << "L1 : set = " << L1.getSet(addr) << " ; tag = " << L1.getTag(addr) << endl;
+    cout << "L2 : set = " << L2.getSet(addr) << " ; tag = " << L2.getTag(addr) << endl;
 
     accessL1();
-    if (L1.isBlock(addr)){ // Search L1 for block
+    if (L1.isBlock(addr)) { // Search L1 for block
         // Block in L1
         L1.updateLRU(addr);
         if (op == 'w') {
@@ -42,7 +41,7 @@ void System::runCommand(char op, uint addr)
     }
     else { // Block not in L1
         cout << "L1 miss";
-        if ((!L1.isFree(addr)) && blockAlloc(op)){ // Check if L1 has space to fit a new block
+        if ((!L1.isFree(addr)) && blockAlloc(op)) { // Check if L1 has space to fit a new block
             // Set if full or operation is write no allocate
             uint vic = L1.chooseVictim(addr);
             if (L1.isDirty(vic)) {
@@ -53,21 +52,20 @@ void System::runCommand(char op, uint addr)
         cout << " ; ";
         // Search in L2
         accessL2();
-        if (L2.isBlock(addr)){
+        if (L2.isBlock(addr)) {
             // Block in L2
             L2.updateLRU(addr);
             if (op == 'w') {
                 L2.setDirty(addr);
             }
             cout << ";" << "L2 hit" << ";";
-        }
-        else { // Block not in L2
+        } else { // Block not in L2
             cout << "L2 miss";
-            if ((!L2.isFree(addr)) && blockAlloc(op)){ // Check if L2 has space to fit a new block
+            if ((!L2.isFree(addr)) && blockAlloc(op)) { // Check if L2 has space to fit a new block
                 // Set is free or operation is write no allocate
                 uint vic = L2.chooseVictim(addr);
                 cout << " - evict L2 " << vic;
-                if (L1.isBlock(vic)){ // Victim in L1
+                if (L1.isBlock(vic)) { // Victim in L1
                     if (L1.isDirty(vic))
                         L2.setDirty(vic);
                     L1.setInvalid(vic);
@@ -78,21 +76,18 @@ void System::runCommand(char op, uint addr)
             accessMem();
             if (blockAlloc(op)) {
                 L2.newBlock(addr);
-                if (op == 'w'){
-                    L2.setDirty(addr);
             }
-        }
-        if (blockAlloc(op)) {
-            L1.newBlock(addr);
-            if (op == 'w'){
-                L2.setDirty(addr);
+            if (blockAlloc(op)) {
+                L1.newBlock(addr);
+                if (op == 'w') {
+                    L1.setDirty(addr);
+                }
             }
+
         }
 
-        cout << endl;
     }
-    }
-
+    cout << endl;
 }
 
 
