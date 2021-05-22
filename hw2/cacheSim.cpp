@@ -64,9 +64,10 @@ void System::runCommand(char op, uint addr)
         else { // Block not in L2
             cout << "L2 miss";
             if ((!L2.isFree(addr)) && blockAlloc(op)){ // Check if L2 has space to fit a new block
-                // Set is free or operation is write no allocate
+                // there is a free block or operation is write no allocate
                 uint vic = L2.chooseVictim(addr);
                 cout << " - evict L2 " << vic;
+                //snooping
                 if (L1.isBlock(vic)){ // Victim in L1
                     if (L1.isDirty(vic))
                         L2.setDirty(vic);
@@ -90,7 +91,7 @@ void System::runCommand(char op, uint addr)
         }
 
         cout << endl;
-    }
+      }
     }
 
 }
