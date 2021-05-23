@@ -47,6 +47,7 @@ void System::runCommand(char op, uint addr) {
             if (L1.isDirty(vic)) {
                 L2.writeBlock(vic);
             }
+            L1.setInvalid(vic);
             //cout << " - evict " << vic;
         }
         //cout << " ; ";
@@ -74,6 +75,7 @@ void System::runCommand(char op, uint addr) {
                     L1.setInvalid(vic);
                     //cout << " - evict L1 ";
                 }
+                L2.setInvalid(vic);
             }
             //cout << " ; ";
             accessMem();

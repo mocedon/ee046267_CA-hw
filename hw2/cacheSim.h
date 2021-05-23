@@ -210,7 +210,7 @@ public:
         uint maxLRU = (1u << ways_) - 1;
         for (auto& block : cache[set]){
             if ((block.getLRU() == maxLRU) && block.isValid()) {
-                block.setValid(false);
+               // block.setValid(false);
                 return block.getAddr_();
             }
         }
