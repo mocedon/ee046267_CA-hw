@@ -5,6 +5,7 @@ import os
 import sys
 import subprocess as sp
 
+
 def read_csv(file):
     f = open(file, 'r')
     lines = f.readlines()

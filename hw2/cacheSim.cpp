@@ -59,7 +59,8 @@ void System::runCommand(char op, uint addr) {
                 L2.setDirty(addr);
             }
             cout << ";" << "L2 hit" << ";";
-        } else { // Block not in L2
+        }
+        else { // Block not in L2
             cout << "L2 miss";
 
             if ((!L2.isFree(addr)) && blockAlloc(op)){ // Check if L2 has space to fit a new block
@@ -76,21 +77,24 @@ void System::runCommand(char op, uint addr) {
             }
             cout << " ; ";
             accessMem();
+
             if (blockAlloc(op)) {
                 L2.newBlock(addr);
             }
-            if (blockAlloc(op)) {
-                L1.newBlock(addr);
-                if (op == 'w') {
-                    L1.setDirty(addr);
-                }
+        }
+        if (blockAlloc(op)) {
+            L1.newBlock(addr);
+            if (op == 'w') {
+                L1.setDirty(addr);
             }
-
         }
 
-        cout << endl;
     }
+
+
+    cout << endl;
 }
+
 
 
 
