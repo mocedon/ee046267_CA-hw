@@ -27,8 +27,8 @@ System::System(uint MemCyc, uint BSize, uint L1Size, uint L2Size, uint L1Assoc,u
                L1(L1Size, L1Assoc, BSize), L2(L2Size, L2Assoc, BSize) {}//System C`tor
 
 void System::runCommand(char op, uint addr) {
-    cout << "L1 : set = " << L1.getSet(addr) << " ; tag = " << L1.getTag(addr) << endl;
-    cout << "L2 : set = " << L2.getSet(addr) << " ; tag = " << L2.getTag(addr) << endl;
+    //cout << "L1 : set = " << L1.getSet(addr) << " ; tag = " << L1.getTag(addr) << endl;
+    //cout << "L2 : set = " << L2.getSet(addr) << " ; tag = " << L2.getTag(addr) << endl;
 
     accessL1();
     if (L1.isBlock(addr)) { // Search L1 for block
@@ -37,19 +37,19 @@ void System::runCommand(char op, uint addr) {
         if (op == 'w') {
             L1.setDirty(addr);
         }
-        cout << "L1 hit" << " ; ";
+        //cout << "L1 hit" << " ; ";
     }
     else { // Block not in L1
-        cout << "L1 miss";
+        //cout << "L1 miss";
         if ((!L1.isFree(addr)) && blockAlloc(op)) { // Check if L1 has space to fit a new block
             // Set if full or operation is write no allocate
             uint vic = L1.chooseVictim(addr);
             if (L1.isDirty(vic)) {
                 L2.writeBlock(vic);
             }
-            cout << " - evict " << vic;
+            //cout << " - evict " << vic;
         }
-        cout << " ; ";
+        //cout << " ; ";
         // Search in L2
         accessL2();
         if (L2.isBlock(addr)) {
@@ -58,24 +58,24 @@ void System::runCommand(char op, uint addr) {
             if (op == 'w') {
                 L2.setDirty(addr);
             }
-            cout << ";" << "L2 hit" << ";";
+            //cout << ";" << "L2 hit" << ";";
         }
         else { // Block not in L2
-            cout << "L2 miss";
+            //cout << "L2 miss";
 
             if ((!L2.isFree(addr)) && blockAlloc(op)){ // Check if L2 has space to fit a new block
                 // there is a free block or operation is write no allocate
                 uint vic = L2.chooseVictim(addr);
-                cout << " - evict L2 " << vic;
+                //cout << " - evict L2 " << vic;
                 //snooping
                 if (L1.isBlock(vic)){ // Victim in L1
                     if (L1.isDirty(vic))
                         L2.setDirty(vic);
                     L1.setInvalid(vic);
-                    cout << " - evict L1 ";
+                    //cout << " - evict L1 ";
                 }
             }
-            cout << " ; ";
+            //cout << " ; ";
             accessMem();
 
             if (blockAlloc(op)) {
@@ -92,7 +92,7 @@ void System::runCommand(char op, uint addr) {
     }
 
 
-    cout << endl;
+    //cout << endl;
 }
 
 
@@ -184,7 +184,7 @@ int main(int argc, char **argv){
 
         unsigned long int num = 0;
         num = strtoul(cutAddress.c_str(), NULL, 16);
-        cout << "Op " << operation << " Addr "<<address << " CA " << num << endl;
+        //cout << "Op " << operation << " Addr "<<address << " CA " << num << endl;
 // *******************   HERE WE NEED TO EXECUTE THE OPERATION     **********************
         sys.runCommand(operation, num);
     }
