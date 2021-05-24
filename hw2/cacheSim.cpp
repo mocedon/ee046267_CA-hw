@@ -67,7 +67,7 @@ void System::runCommand(char op, uint addr) {
                     if (L1.isDirty(vic))
                         L2.setDirty(vic);
                     L1.setInvalid(vic);
-                    cout << " - evict L1 ";
+                    //cout << " - evict L1 ";
                 }
                 L2.setInvalid(vic);
             }
