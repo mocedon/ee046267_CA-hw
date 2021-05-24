@@ -27,8 +27,8 @@ System::System(uint MemCyc, uint BSize, uint L1Size, uint L2Size, uint L1Assoc,u
                L1(L1Size, L1Assoc, BSize), L2(L2Size, L2Assoc, BSize) {}//System C`tor
 
 void System::runCommand(char op, uint addr) {
-    cout << "L1 : set = " << L1.getSet(addr) << " ; tag = " << L1.getTag(addr) << endl;
-    cout << "L2 : set = " << L2.getSet(addr) << " ; tag = " << L2.getTag(addr) << endl;
+    //cout << "L1 : set = " << L1.getSet(addr) << " ; tag = " << L1.getTag(addr) << endl;
+    //cout << "L2 : set = " << L2.getSet(addr) << " ; tag = " << L2.getTag(addr) << endl;
 
     accessL1();
     if (L1.isBlock(addr)) { // Search L1 for block
@@ -188,7 +188,7 @@ int main(int argc, char **argv){
 
         unsigned long int num = 0;
         num = strtoul(cutAddress.c_str(), NULL, 16);
-        cout << "Op " << operation << " Addr "<<address << " CA " << num << endl;
+        //cout << "Op " << operation << " Addr "<<address << " CA " << num << endl;
 // *******************   HERE WE NEED TO EXECUTE THE OPERATION     **********************
         sys.runCommand(operation, num);
     }
