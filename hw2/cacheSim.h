@@ -19,7 +19,9 @@ typedef unsigned int uint;
 
 
 /*** Global Functions ***/
-
+/*
+ * Extract k bit starting from position p
+ */
 uint bitExt(uint num, uint k, uint p)
 {
     return (((1u << k) -1u) & (num >> p));
@@ -34,12 +36,14 @@ private:
     // fields:
     bool valid_; // 0 = empty block
     bool dirty_; //0=not dirty regarding the lower level
-    uint addr_;
+    uint addr_; // Whole address of block (including offset)
     uint tag_;
-    uint LRU_;
+    uint LRU_; //0 is most recently used,
 public:
     //methods:
-    Block(uint LRU):valid_(0), dirty_(0), tag_(0), addr_(0), LRU_(LRU){}
+
+
+    Block(uint LRU):valid_(0), dirty_(0), tag_(0), addr_(0), LRU_(LRU){}  //C'tor
 
     bool isValid() const {
         return valid_;
@@ -79,7 +83,7 @@ public:
 
     void setLRU(uint LRU_) {
         Block::LRU_ = LRU_;
-    }; //C'tor
+    };
 
 
 };//class Block
@@ -98,38 +102,26 @@ public:
     //methods:
     Cache(uint CSize, uint ways, uint BSize);
 
-    uint getSet(uint addr){
+    uint getSet(uint addr){ // Extract set value from address
         return bitExt(addr, set_, BSize_);
     }
 
-    uint getTag(uint addr){
+    uint getTag(uint addr){ // Extract tag value from address
         return bitExt(addr, ADDR_BITS - set_ - BSize_, BSize_ + set_);
     }
-/*
-    uint getBlock(uint addr){
-        uint set = getSet(addr);
-        uint tag = getTag(addr);
-        uint i = 0u;
-        for (auto& block : cache[set]){
-            if ((block.getTag() == tag))
-                return i;
-            i++;
-        }
 
-    }
-*/
-    bool isBlock(uint addr){
+    bool isBlock(uint addr){ // Search for a tag in a cache line according to set
         uint set = getSet(addr);
         uint tag = getTag(addr);
 
-        for (auto& block : cache[set]){
+        for (auto& block : cache[set]){ // Iterate over all blocks in the set
             if ((block.getTag() == tag) && block.isValid())
                 return true;
         }
         return false;
     }
 
-    void setInvalid(uint addr){
+    void setInvalid(uint addr){ // Change block in address to invalid
         uint set = getSet(addr);
         uint tag = getTag(addr);
 
@@ -141,27 +133,29 @@ public:
         }
     }
 
-    void updateLRU(uint addr){
+    void updateLRU(uint addr){ // Change LRU for all blocks in set
         uint set = getSet(addr);
         uint tag = getTag(addr);
 
-        uint curr;
+        uint curr; // Current block's LRU value
         Block* b;
         for (auto& block : cache[set]) {
             if (block.getTag() == tag && block.isValid()) {
                 curr = block.getLRU();
-                b = &block;
+                b = &block; // Save it to update last
             }
         }
         for (auto& block : cache[set]) {
-            if ((block.getLRU() < curr) && block.isValid())
+            if ((block.getLRU() < curr) && block.isValid()) {
+                // LRU value is smaller then current
                 block.setLRU(block.getLRU() + 1);
+            }
         }
         b->setLRU(0); // 0 is most recently used
 
     }
 
-    void writeBlock(uint addr){
+    void writeBlock(uint addr){ // Change block in address to dirty
         uint set = getSet(addr);
         uint tag = getTag(addr);
 
@@ -173,7 +167,7 @@ public:
         updateLRU(addr);
     }
 
-    bool isDirty(uint addr){
+    bool isDirty(uint addr){ // Check block in address if it si dirty
         uint set = getSet(addr);
         uint tag = getTag(addr);
 
@@ -184,7 +178,7 @@ public:
         return false;
     }
 
-    void setDirty(uint addr){
+    void setDirty(uint addr){ // Change block in address to dirty
         uint set = getSet(addr);
         uint tag = getTag(addr);
 
@@ -196,7 +190,7 @@ public:
         }
     }
 
-    bool isFree(uint addr){
+    bool isFree(uint addr){ // Check if set has block that is invalid
         uint set = getSet(addr);
         for (auto& block : cache[set]){
             if (!(block.isValid()))
@@ -205,18 +199,17 @@ public:
         return false;
     }
 
-    uint chooseVictim(uint addr){
+    uint chooseVictim(uint addr){ // Search for least recently used block in set
         uint set = getSet(addr);
         uint maxLRU = (1u << ways_) - 1;
         for (auto& block : cache[set]){
             if ((block.getLRU() == maxLRU) && block.isValid()) {
-               // block.setValid(false);
                 return block.getAddr_();
             }
         }
     }
 
-    void newBlock(uint addr){
+    void newBlock(uint addr){ // sets and new block for address
         uint set = getSet(addr);
         uint tag = getTag(addr);
         for (auto& block : cache[set]){
@@ -258,9 +251,10 @@ public:
 
     void calcStats(double& L1miss, double& L2miss, double& avgTime){
         if (L1count_)
-            L1miss = (double)(L2count_) / L1count_;
+            L1miss = (double)(L2count_) / L1count_; // Each access to L2 means a miss in L1
         if (L2count_)
-            L2miss = (double)(memCount_) / L2count_;
+            L2miss = (double)(memCount_) / L2count_; // Each access to mem means a miss in L2
+
         avgTime = L1Cyc_ + ((double)L2Cyc_ * L1miss) + ((double)MemCyc_ * L1miss * L2miss);
     }
 
@@ -276,7 +270,7 @@ public:
         memCount_++;
     }
 
-    bool blockAlloc(char op){
+    bool blockAlloc(char op){ // Block should be allocated to read or write allocate
 
         return ((op == 'r') || ((WrAlloc_ == 1) && (op == 'w')));
     }
