@@ -9,7 +9,7 @@
 
 class MT {
 public:
-	MT() : thread(0), clck(0), inst(0), thread_num(SIM_GetThreadsNum()),
+	MT() : thread(0), clck(0), inst(0), thread_num(SIM_GetThreadsNum()), sw(false),
 	thread_inst(thread_num, 0), thread_halt(thread_num, 0), thread_ctxt(thread_num){
 
 		for (int i = 0; i < thread_num; i++){
@@ -35,9 +35,15 @@ public:
     }
 
     bool pick_thread(int start){
-        for (int i = start; i < (thread_num + 1); i++){
+        for (int i = start; i < (thread_num + start); i++){
             int j = (thread + i) % thread_num;
             if ((thread_inst[j] > -1) && (thread_halt[j] == 0)) {
+                if (sw && (thread != j)){
+                    for (int i = 0; i < SIM_GetSwitchCycles(); i++){
+                        update_halt();
+                    }
+                    sw = false;
+                }
                 thread = j;
                 return true;
             }
@@ -95,32 +101,19 @@ public:
 	            SIM_MemDataRead((uint32_t)addr, &data);
 	            set_reg(dst_reg, data);
 	            thread_halt[thread] = SIM_GetLoadLat() + 1 ; // including this clock cycle
-	            if (sw_penalty){
-	                for (int i = 0; i < SIM_GetSwitchCycles(); i++){
-	                    update_halt();
-	                }
-	            }
+	            sw = sw_penalty;
 	            break;
 	        case CMD_STORE:
                 addr = get_reg(dst_reg) + (imm ? src2 : get_reg(src2));
                 SIM_MemDataWrite((uint32_t)addr, get_reg(src1));
                 thread_halt[thread] = SIM_GetStoreLat() + 1; // including this clock cycle
-                if (sw_penalty){
-                    for (int i = 0; i < SIM_GetSwitchCycles(); i++){
-                        update_halt();
-                    }
-                }
+                sw = sw_penalty;
 	            break;
 	        case CMD_HALT:
 	            thread_inst[thread] = -1;
-                if (sw_penalty){
-                    for (int i = 0; i < SIM_GetSwitchCycles(); i++){
-                        update_halt();
-                    }
-                }
+                sw = sw_penalty;
 	            break;
 	    }
-
 	}
 
     tcontext get_context(int id) {
@@ -143,6 +136,8 @@ private:
 	std::vector<tcontext> thread_ctxt;
 	int clck;
 	int inst;
+
+	bool sw;
 };
 
 MT block;
@@ -150,7 +145,6 @@ MT grain;
 
 void CORE_BlockedMT() {
 	block = MT();
-
 	while (block.thread_active()){
 		if (block.pick_thread(0)){
 			block.op(true);
