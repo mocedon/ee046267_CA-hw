@@ -9,8 +9,9 @@
 
 class MT {
 public:
-	MT() : thread(0), clck(0), inst(0), thread_num(SIM_GetThreadsNum()), sw(false){
-        thread_inst = std::vector<int>(thread_num, 0);
+	MT() : thread(0), clck(0), inst(0), sw(false){
+        thread_num = SIM_GetThreadsNum();
+	    thread_inst = std::vector<int>(thread_num, 0);
         thread_halt = std::vector<int>(thread_num, 0);
         thread_ctxt = std::vector<tcontext>(thread_num);
 		for (int i = 0; i < thread_num; i++){
@@ -26,6 +27,7 @@ public:
 	void thread_fix() {
 	    thread = -1; // offset the +1 on first round
 	}
+
     bool thread_active(){
         for (int i = 0; i < thread_num; i++){
             if (thread_inst[i] > -1){
@@ -125,60 +127,60 @@ public:
 	    return ((double)clck) / ((double)inst);
 	}
 
-
-
 private:
 
 	int thread;
+    int clck;
+    int inst;
 	int thread_num;
-	std::vector<int> thread_inst;
+    bool sw;
+
+    std::vector<int> thread_inst;
 	std::vector<int> thread_halt;
 
 	std::vector<tcontext> thread_ctxt;
-	int clck;
-	int inst;
 
-	bool sw;
+
 };
 
-MT block;
-MT grain;
+MT *block = nullptr;
+MT *grain = nullptr;
 
 void CORE_BlockedMT() {
-	block = MT();
-	while (block.thread_active()){
-		if (block.pick_thread(0)){
-			block.op(true);
+	block = new MT();
+	while (block->thread_active()){
+		if (block->pick_thread(0)){
+			block->op(true);
 		}
-		block.update_halt();
+		block->update_halt();
 	}
 }
 
 void CORE_FinegrainedMT() {
-    grain = MT();
-    grain.thread_fix();
-    while (grain.thread_active()){
-        if (grain.pick_thread(1)){
-            grain.op(false);
+    grain = new MT();
+    grain->thread_fix();
+    while (grain->thread_active()){
+        if (grain->pick_thread(1)){
+            grain->op(false);
         }
-        grain.update_halt();
+        grain->update_halt();
     }
 }
 
 double CORE_BlockedMT_CPI(){
-	double ret = block.get_CPI();
-	block.kill_MT();
+	double ret = block->get_CPI();
+	free(block);
     return ret;
 }
 
 double CORE_FinegrainedMT_CPI(){
-    double ret = grain.get_CPI();
-    grain.kill_MT();
+    double ret = grain->get_CPI();
+    free(grain);
     return ret;
 }
 
 void CORE_BlockedMT_CTX(tcontext* context, int threadid) {
-	tcontext ctxt = block.get_context(threadid);
+	tcontext ctxt = block->get_context(threadid);
 	for (int i = 0; i < REGS_COUNT; i++){
 	    context[threadid].reg[i] = ctxt.reg[i];
 	}
@@ -186,7 +188,7 @@ void CORE_BlockedMT_CTX(tcontext* context, int threadid) {
 }
 
 void CORE_FinegrainedMT_CTX(tcontext* context, int threadid) {
-	tcontext ctxt = block.get_context(threadid);
+	tcontext ctxt = block->get_context(threadid);
     for (int i = 0; i < REGS_COUNT; i++){
         context[threadid].reg[i] = ctxt.reg[i];
     }
