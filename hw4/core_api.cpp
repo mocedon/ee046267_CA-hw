@@ -9,9 +9,10 @@
 
 class MT {
 public:
-	MT() : thread(0), clck(0), inst(0), thread_num(SIM_GetThreadsNum()), sw(false),
-	thread_inst(thread_num, 0), thread_halt(thread_num, 0), thread_ctxt(thread_num){
-
+	MT() : thread(0), clck(0), inst(0), thread_num(SIM_GetThreadsNum()), sw(false){
+        thread_inst = std::vector<int>(thread_num, 0);
+        thread_halt = std::vector<int>(thread_num, 0);
+        thread_ctxt = std::vector<tcontext>(thread_num);
 		for (int i = 0; i < thread_num; i++){
 			for (int j = 0; j < REGS_COUNT; j++){
 				thread_ctxt[i].reg[j] = 0;
