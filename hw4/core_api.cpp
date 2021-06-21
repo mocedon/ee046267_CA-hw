@@ -10,12 +10,26 @@
  * thread      - Represents the current working thread, each clock has only 1 active thread at most, initialized to 0
  * clck        - Represents the clock counter
  * inst        - Represents the instruction counter
- * sw          - Represents thread switch event (Block) used only in blccking MT
+ * sw          - Represents thread switch event (Block) used only in blocking MT
  * thread_num  - Represents the number of threads (active and non-active)
  * thread_inst - Represents the current instruction on each thread, starts at 0, -1 non-active
  * thread_halt - Represents the halt timer for each thread, for load/Store OP
  * thread_ctxt - Represents the context of each thread separately */
-class MT {
+class MT{
+private:
+
+    int thread;
+    int clck;
+    int inst;
+    int thread_num;
+    bool sw;
+
+    std::vector<int> thread_inst;
+    std::vector<int> thread_halt;
+
+    std::vector<tcontext> thread_ctxt;
+
+
 public:
     // Constructor initializes everything to 0
 	MT() : thread(0), clck(0), inst(0), sw(false){
@@ -53,8 +67,8 @@ public:
         for (int i = start; i < (thread_num + start); i++){
             int j = (thread + i) % thread_num; // Constraints j to range 0 - thread_num
             if ((thread_inst[j] > -1) && (thread_halt[j] == 0)) { // Thread is active and not on idle
-                if (sw && (thread != j)){ // Used in blocking TM only
-                    // In case that a switch event is reached and a new thread in picked we need to change context
+                if ( sw &&(thread != j) ){ // Used in blocking MT only
+                    // In case that a switch event is reached and a new thread is picked we need to change context
                     for (int i = 0; i < SIM_GetSwitchCycles(); i++){
                         update_halt(); // For switch_cycles run the clock forward
                     }
@@ -151,21 +165,8 @@ public:
 	    return ((double)clck) / ((double)inst);
 	}
 
-private:
 
-	int thread;
-    int clck;
-    int inst;
-	int thread_num;
-    bool sw;
-
-    std::vector<int> thread_inst;
-	std::vector<int> thread_halt;
-
-	std::vector<tcontext> thread_ctxt;
-
-
-};
+};// class
 
 // Global MT instances
 MT *block = nullptr;
@@ -174,7 +175,7 @@ MT *grain = nullptr;
 
 void CORE_BlockedMT() {
 	block = new MT(); // Dynamic allocation
-	while (block->thread_active()){ // All threads are active
+	while (block->thread_active()){ // at least one of the threads is active
 		if (block->pick_thread(0)){
 		    // There is a thread that is not idle
 			block->op(true);
@@ -186,7 +187,7 @@ void CORE_BlockedMT() {
 void CORE_FinegrainedMT() {
     grain = new MT(); //Dynamic allocation
     grain->thread_fix(); // Super good enough
-    while (grain->thread_active()){ // All threads are active
+    while (grain->thread_active()){ // at least one of the threads is active
         if (grain->pick_thread(1)){
             // There is a thread that is not idle
             grain->op(false);
